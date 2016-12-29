@@ -1,0 +1,90 @@
+<link rel="import" href="/bower_components/polymer/polymer.html">
+<link rel="import" href="../iron-ajax/iron-ajax.html">
+<dom-module id="ac-player">
+    <template>
+        <style>
+            :host {
+            }
+        </style>
+        <iron-ajax auto id="ajax" url="http://localhost:3000/data/{{instrumentActivityUrl}}.json" handle-as="json" last-response="{{instrumentActivity}}" loading="{{loading}}" on-response="_didRespond"></iron-ajax>
+        <iron-ajax auto id="ajax" url="http://localhost:3000/data/{{velocitiesUrl}}.json" handle-as="json" last-response="{{velocities}}" loading="{{loading}}" on-response="_didRespond"></iron-ajax>
+    </template>
+    <script>
+        Polymer({
+            is: "ac-player",
+            observers: [],
+            behaviors:[],
+            listeners: {
+            },
+            properties: {
+                instrumentActivityUrl:{
+                    type:String
+                },
+                velocitiesUrl:{
+                    type:String
+                },
+                instrumentActivity:{
+                    type:Object
+                },
+                lastPlayTime:{
+                    type:Number,
+                    value:0
+                },
+                buffers:{
+                    type:Array,
+                    value:[]
+                },
+                playing:{
+                    type:Boolean,
+                    value:false
+                },
+                lastActivityTime:{
+                    type:Number,
+                    value:0
+                },
+            },
+            _didRespond: function(){
+            },
+            play: function(time){
+                this.playing = true;
+                this.fire('velocity-change', {velocity:127}) ;
+
+                var it , i ;
+                for (i = 0; i < this.instrumentActivity.recording.length; i++) {
+                    it = this.instrumentActivity.recording[i] ;
+                    this._programActivity(it.time,it.cmd,it.button,0,it.channel) ;
+
+                }
+                for (i = 0;i < this.velocities.velocities.length;i++) {
+                    it = this.velocities.velocities[i] ;
+                    console.log(it.time+" " + it.cmd+" " + 0+" " + it.value,0);
+                    this._programActivity(it.time,it.cmd,0,it.value,0) ;
+                }
+            },
+            pause: function(){
+                this.fire('velocity-change', {velocity:0}) ;
+                this.playing =false ;
+                while (this.buffers.length > 0 ) {
+                    this.buffers[this.buffers.length-1].stop() ;
+                    this.buffers.pop() ;
+                }
+            },
+            _programActivity: function(time,cmd,button,velocity,channel){
+                var source = context.createBufferSource () ;
+                source.buffer = context.createBuffer (1,1,44100) ;
+                source.onended= function () {
+                    if(this.playing) {
+                        this.fire(cmd, {
+                            channel:channel,
+                            midiNote: button,
+                            velocity: velocity
+                        });
+                    }
+                }.bind(this) ;
+                source.connect(context.destination) ;
+                source.start(context.currentTime+time) ;
+                this.buffers.push(source) ;
+            },
+        });
+    </script>
+</dom-module>
