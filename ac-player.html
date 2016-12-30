@@ -37,6 +37,18 @@ example Usage
             listeners: {
             },
             properties: {
+                lastVelocity:{
+                    type:Number,
+                    value:127
+                },
+                playTime:{
+                    type:Number,
+                    value:0
+                },
+                playBackTime:{
+                    type:Number,
+                    value:4
+                },
                 instrumentActivityUrl:{
                     type:String
                 },
@@ -45,10 +57,6 @@ example Usage
                 },
                 instrumentActivity:{
                     type:Object
-                },
-                lastPlayTime:{
-                    type:Number,
-                    value:0
                 },
                 buffers:{
                     type:Array,
@@ -65,31 +73,49 @@ example Usage
             },
             _didRespond: function(){
             },
-            play: function(time){
+            _getCurrentInstrumentIndex: function(){
+                for (var i = 0; i < this.instrumentActivity.recording.length; i++) {
+                    if (this.instrumentActivity.recording[i].time>this.playBackTime)  {
+                        return i;
+                    }
+                }
+                return this.instrumentActivity.recording.length;
+            },
+            _getCurrentVelocityIndex: function(){
+                for (var i = 0; i < this.velocities.velocities.length; i++) {
+                    if (this.velocities.velocities[i].time>this.playBackTime)
+                        return i;
+                }
+                return this.velocities.velocities.length;
+            },
+            play: function(){
+                this.playTime = context.currentTime ;
+                var sIIndex = this._getCurrentInstrumentIndex () ;
+                var sVIndex = this._getCurrentVelocityIndex () ;
                 this.playing = true;
-                this.fire('velocity-change', {velocity:127,fromPlayer:true}) ;
+                this.fire('velocity-change', {velocity:this.lastVelocity,fromPlayer:true}) ;
 
                 var it , i ;
-                for (i = 0; i < this.instrumentActivity.recording.length; i++) {
+                for (i = sIIndex; i < this.instrumentActivity.recording.length; i++) {
                     it = this.instrumentActivity.recording[i] ;
-                    this._programActivity(it.time,it.cmd,it.button,0,it.channel) ;
+                    this._programInstrumentActivity(it.time,it.cmd,it.button,it.channel) ;
 
                 }
-                for (i = 0;i < this.velocities.velocities.length;i++) {
+                for (i = sVIndex;i < this.velocities.velocities.length;i++) {
                     it = this.velocities.velocities[i] ;
-                    console.log(it.time+" " + it.cmd+" " + 0+" " + it.value,0);
-                    this._programActivity(it.time,it.cmd,0,it.value,0) ;
+                    this._programVelocityActivity(it.time,it.value) ;
                 }
             },
             pause: function(){
-                this.fire('velocity-change', {velocity:0,fromPlayer:true}) ;
+                this.playBackTime += context.currentTime-this.playTime ;
                 this.playing =false ;
+                this.fire('velocity-change', {velocity:0,fromPlayer:true}) ;
                 while (this.buffers.length > 0 ) {
                     this.buffers[this.buffers.length-1].stop() ;
                     this.buffers.pop() ;
                 }
             },
-            _programActivity: function(time,cmd,button,velocity,channel){
+            _programInstrumentActivity: function(time,cmd,button,channel){
                 var source = context.createBufferSource () ;
                 source.buffer = context.createBuffer (1,1,44100) ;
                 source.onended= function () {
@@ -97,15 +123,30 @@ example Usage
                         this.fire(cmd, {
                             channel:channel,
                             midiNote: button,
+                            fromPlayer:true
+                        });
+                    }
+                }.bind(this) ;
+                source.connect(context.destination) ;
+                source.start(context.currentTime+(time-this.playBackTime)) ;
+                this.buffers.push(source) ;
+            },
+            _programVelocityActivity: function(time,velocity){
+                var source = context.createBufferSource () ;
+                source.buffer = context.createBuffer (1,1,44100) ;
+                source.onended= function () {
+                    if(this.playing) {
+                        this.lastVelocity = velocity ;
+                        this.fire("velocity-change", {
                             velocity: velocity,
                             fromPlayer:true
                         });
                     }
                 }.bind(this) ;
                 source.connect(context.destination) ;
-                source.start(context.currentTime+time) ;
+                source.start(context.currentTime+(time-this.playBackTime)) ;
                 this.buffers.push(source) ;
-            },
+            }
         });
     </script>
 </dom-module>
