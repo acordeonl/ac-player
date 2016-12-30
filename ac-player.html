@@ -1,5 +1,7 @@
 <link rel="import" href="../polymer/polymer.html">
-<link rel="import" href="../iron-ajax/iron-ajax.html">
+<link rel="import" href="../ajax-manager/ajax-manager.html">
+<link rel="import" href="../iron-localstorage/iron-localstorage.html">
+
 
 <!--
 
@@ -24,8 +26,8 @@ example Usage
             :host {
             }
         </style>
-        <iron-ajax auto id="ajax" url="http://localhost:3000/data/{{instrumentActivityUrl}}.json" handle-as="json" last-response="{{instrumentActivity}}" loading="{{loading}}" on-response="_didRespond"></iron-ajax>
-        <iron-ajax auto id="ajax" url="http://localhost:3000/data/{{velocitiesUrl}}.json" handle-as="json" last-response="{{velocities}}" loading="{{loading}}" on-response="_didRespond"></iron-ajax>
+        <iron-localstorage name="alicia_adorada" value="{{instrumentActivity}}" ></iron-localstorage>
+        <iron-localstorage name="alicia_adorada_velocities" value="{{velocities}}"></iron-localstorage>
     </template>
     <script>
         Polymer({
@@ -65,7 +67,7 @@ example Usage
             },
             play: function(time){
                 this.playing = true;
-                this.fire('velocity-change', {velocity:127}) ;
+                this.fire('velocity-change', {velocity:127,fromPlayer:true}) ;
 
                 var it , i ;
                 for (i = 0; i < this.instrumentActivity.recording.length; i++) {
@@ -80,7 +82,7 @@ example Usage
                 }
             },
             pause: function(){
-                this.fire('velocity-change', {velocity:0}) ;
+                this.fire('velocity-change', {velocity:0,fromPlayer:true}) ;
                 this.playing =false ;
                 while (this.buffers.length > 0 ) {
                     this.buffers[this.buffers.length-1].stop() ;
@@ -95,7 +97,8 @@ example Usage
                         this.fire(cmd, {
                             channel:channel,
                             midiNote: button,
-                            velocity: velocity
+                            velocity: velocity,
+                            fromPlayer:true
                         });
                     }
                 }.bind(this) ;
