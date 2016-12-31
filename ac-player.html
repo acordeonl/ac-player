@@ -66,7 +66,7 @@ example Usage
                 },
                 playBackTime:{
                     type:Number,
-                    value:2.4
+                    value:4.1
                 },
                 instrumentActivityUrl:{
                     type:String
@@ -154,8 +154,11 @@ example Usage
                 for (i = sIIndex; i < this.instrumentActivity.recording.length; i++) {
                     it = this.instrumentActivity.recording[i] ;
                     var time = it.time*tempo ;
-                    if ( time < this.playBackTime )
+                    if ( time < this.playBackTime ) {
                         time = this.playBackTime;
+                        if(it.cmd === "note-off")
+                            time+=0.01 ;
+                    }
                     this._programInstrumentActivity( time,it.cmd,it.button,it.channel) ;
 
                 }
