@@ -37,6 +37,25 @@ example Usage
             listeners: {
             },
             properties: {
+                instrumentActivity:{
+                    type:Object,
+                    observer:'_initInstrumentActivity'
+                },
+                instrumentActivityEndNote:{
+                    type:Array,
+                    value:[]
+                },
+                velocities:{
+                    type:Object
+                },
+                updatingTempo:{
+                    type:Boolean,
+                    value:false
+                },
+                tempo:{
+                    type:Number,
+                    value:100
+                },
                 lastVelocity:{
                     type:Number,
                     value:127
@@ -47,16 +66,13 @@ example Usage
                 },
                 playBackTime:{
                     type:Number,
-                    value:4
+                    value:2.4
                 },
                 instrumentActivityUrl:{
                     type:String
                 },
                 velocitiesUrl:{
                     type:String
-                },
-                instrumentActivity:{
-                    type:Object
                 },
                 buffers:{
                     type:Array,
@@ -73,43 +89,86 @@ example Usage
             },
             _didRespond: function(){
             },
+            _initInstrumentActivity: function(){
+                var arr= this.instrumentActivity.recording ;
+                var i ;
+                for ( i = 0; i < arr.length; i++){
+                    this.instrumentActivityEndNote[i] = -1 ;
+                    if (arr[i].cmd === 'note-on')
+                        for (var j = i+1; j < arr.length; j++)
+                            if (arr[j].button=== arr[i].button ){
+                                this.instrumentActivityEndNote[i] = j ;
+                                    break;
+                            }
+                }
+            },
             _getCurrentInstrumentIndex: function(){
-                for (var i = 0; i < this.instrumentActivity.recording.length; i++) {
-                    if (this.instrumentActivity.recording[i].time>this.playBackTime)  {
+                var arr = this.instrumentActivity.recording ;
+                for (var i = 0; i < arr.length; i++) {
+                    var tempo = 1/(this.tempo/100) ;
+                    var cond = arr[i].time*tempo < this.playBackTime ;
+                    if ( arr[i].cmd === "note-on")
+                        cond &= arr[this.instrumentActivityEndNote[i]].time*tempo > this.playBackTime ;
+                    else
+                        cond = false ;
+                    if (arr[i].time*tempo>this.playBackTime || cond)  {
                         return i;
                     }
                 }
-                return this.instrumentActivity.recording.length;
+                return arr.length;
             },
             _getCurrentVelocityIndex: function(){
-                for (var i = 0; i < this.velocities.velocities.length; i++) {
-                    if (this.velocities.velocities[i].time>this.playBackTime)
+                var arr = this.velocities.velocities ;
+                for (var i = 0; i < arr.length; i++) {
+                    if (arr[i].time>this.playBackTime)
                         return i;
                 }
-                return this.velocities.velocities.length;
+                return arr.length;
+            },
+            updateTempo: function(tempo){
+                if ( !this.updatingTempo) {
+                    this.updatingTempo =true ;
+                    this.pause() ;
+                    this.async(function(){
+                        var tempoAux = 100/this.tempo ;
+                        this.playBackTime/=tempoAux ;
+
+                        tempoAux = tempo/100 ;
+                        this.playBackTime/=tempoAux ;
+
+                        this.tempo= tempo ;
+                        this.play();
+                        this.updatingTempo = false ;
+                    } , 1000 )  ;
+                }
             },
             play: function(){
                 this.playTime = context.currentTime ;
                 var sIIndex = this._getCurrentInstrumentIndex () ;
                 var sVIndex = this._getCurrentVelocityIndex () ;
                 this.playing = true;
-                this.fire('velocity-change', {velocity:this.lastVelocity,fromPlayer:true}) ;
-
+                this.fire('velocity-change', {velocity:this.lastVelocity,fromPlayer:false}) ;
+                var tempo = 1/(this.tempo/100) ;
                 var it , i ;
                 for (i = sIIndex; i < this.instrumentActivity.recording.length; i++) {
                     it = this.instrumentActivity.recording[i] ;
-                    this._programInstrumentActivity(it.time,it.cmd,it.button,it.channel) ;
+                    var time = it.time*tempo ;
+                    if ( time < this.playBackTime )
+                        time = this.playBackTime;
+                    this._programInstrumentActivity( time,it.cmd,it.button,it.channel) ;
 
                 }
                 for (i = sVIndex;i < this.velocities.velocities.length;i++) {
                     it = this.velocities.velocities[i] ;
-                    this._programVelocityActivity(it.time,it.value) ;
+                    this._programVelocityActivity(it.time*tempo,it.value) ;
                 }
             },
             pause: function(){
+                if ( this.playTime === 0)
+                    this.playTime = context.currentTime ;
                 this.playBackTime += context.currentTime-this.playTime ;
                 this.playing =false ;
-                this.fire('velocity-change', {velocity:0,fromPlayer:true}) ;
+                this.fire('velocity-change', {velocity:0,fromPlayer:false}) ;
                 while (this.buffers.length > 0 ) {
                     this.buffers[this.buffers.length-1].stop() ;
                     this.buffers.pop() ;
@@ -123,7 +182,7 @@ example Usage
                         this.fire(cmd, {
                             channel:channel,
                             midiNote: button,
-                            fromPlayer:true
+                            fromPlayer:false
                         });
                     }
                 }.bind(this) ;
@@ -139,7 +198,7 @@ example Usage
                         this.lastVelocity = velocity ;
                         this.fire("velocity-change", {
                             velocity: velocity,
-                            fromPlayer:true
+                            fromPlayer:false
                         });
                     }
                 }.bind(this) ;
