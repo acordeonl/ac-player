@@ -120,7 +120,8 @@ example Usage
             _getCurrentVelocityIndex: function(){
                 var arr = this.velocities.velocities ;
                 for (var i = 0; i < arr.length; i++) {
-                    if (arr[i].time>this.playBackTime)
+                    var tempo = 1/(this.tempo/100) ;
+                    if (arr[i].time*tempo>this.playBackTime)
                         return i;
                 }
                 return arr.length;
