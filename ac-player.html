@@ -1,4 +1,4 @@
-<link rel="import" href="../polymer/polymer.html">
+s<link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../ajax-manager/ajax-manager.html">
 <link rel="import" href="../iron-localstorage/iron-localstorage.html">
 
@@ -26,8 +26,8 @@ example Usage
             :host {
             }
         </style>
-        <iron-localstorage name="alicia_adorada4" value="{{instrumentActivity}}" ></iron-localstorage>
-        <iron-localstorage name="alicia_adorada_velocities" value="{{velocities}}"></iron-localstorage>
+        <iron-localstorage name="alicia_adorada3" value="{{instrumentActivity}}" ></iron-localstorage>
+        <iron-localstorage name="alicia_adorada_velocities3" value="{{velocities}}"></iron-localstorage>
     </template>
     <script>
         Polymer({
@@ -110,10 +110,10 @@ example Usage
                 var arr = this.instrumentActivity.recording ;
                 for (var i = 0; i < arr.length; i++) {
                     var tempo = 1/(this.tempo/100) ;
-                    // var cond = arr[i].time*tempo < this.playBackTime ;
-                    // if ( arr[i].cmd === "note-on")
-                    //     cond &= arr[this.instrumentActivityEndNote[i]].time*tempo > this.playBackTime ;
-                    // else
+                    var cond = arr[i].time*tempo < this.playBackTime ;
+                    if ( arr[i].cmd === "note-on")
+                        cond &= arr[this.instrumentActivityEndNote[i]].time*tempo > this.playBackTime ;
+                    else
                         cond = false ;
                     if (arr[i].time*tempo>this.playBackTime || cond)  {
                         return i;
@@ -166,10 +166,10 @@ example Usage
                     this._programInstrumentActivity( time,it.cmd,it.button,it.channel) ;
 
                 }
-                // for (i = sVIndex;i < this.velocities.velocities.length;i++) {
-                //     it = this.velocities.velocities[i] ;
-                //     this._programVelocityActivity(it.time*tempo,it.value) ;
-                // }
+                for (i = sVIndex;i < this.velocities.velocities.length;i++) {
+                    it = this.velocities.velocities[i] ;
+                    this._programVelocityActivity(it.time*tempo,it.value) ;
+                }
             },
             pause: function(){
                 if ( this.playTime === 0)
@@ -177,29 +177,11 @@ example Usage
                 this.playBackTime += context.currentTime-this.playTime ;
                 this.playing =false ;
                 this.fire('velocity-change', {velocity:0,fromPlayer:false}) ;
-                // while (this.buffers.length > 0 ) {
-                //     this.buffers[this.buffers.length-1].stop() ;
-                //     this.buffers.pop() ;
-                // }
-                for (var i = 0; i < this.events.length; i++) {
+                for (var i = 0; i < this.events.length; i++)
                     this.cancelAsync(this.events[i]) ;
-                }
                 this.events = [] ;
             },
             _programInstrumentActivity: function(time,cmd,button,channel){
-                // var source = context.createBufferSource () ;
-                // source.connect(context.destination) ;
-                // source.buffer = context.createBuffer (1,1,44100) ;
-                // source.onended= function () {
-                //     if(this.playing) {
-                //         this.fire(cmd, {
-                //             channel:channel,
-                //             midiNote: button,
-                //             fromPlayer:false
-                //         });
-                //     }
-                // }.bind(this) ;
-
                 this.events.push(this.async(function(){
                     if(this.playing) {
                         this.fire(cmd, {
@@ -209,24 +191,17 @@ example Usage
                         });
                     }
                 }.bind(this), (time-this.playBackTime)*1000 )   ) ;
-                // source.start(this.playTime+(time-this.playBackTime)) ;
-                // this.buffers.push(source) ;
             },
             _programVelocityActivity: function(time,velocity){
-                var source = context.createBufferSource () ;
-                source.buffer = context.createBuffer (1,1,44100) ;
-                source.onended= function () {
+                this.events.push(this.async(function(){
+                    // console.log(velocity); 
                     if(this.playing) {
-                        this.lastVelocity = velocity ;
                         this.fire("velocity-change", {
                             velocity: velocity,
                             fromPlayer:false
                         });
                     }
-                }.bind(this) ;
-                source.connect(context.destination) ;
-                source.start(this.playBackTime+(time-this.playBackTime)) ;
-                this.buffers.push(source) ;
+                }.bind(this), (time-this.playBackTime)*1000 )   ) ;
             }
         });
     </script>
