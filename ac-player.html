@@ -26,8 +26,8 @@ example Usage
             :host {
             }
         </style>
-        <iron-localstorage name="alicia_adorada3" value="{{instrumentActivity}}" ></iron-localstorage>
-        <iron-localstorage name="alicia_adorada_velocities3" value="{{velocities}}"></iron-localstorage>
+        <iron-localstorage name="alicia_adorada4" value="{{instrumentActivity}}" ></iron-localstorage>
+        <iron-localstorage name="alicia_adorada_velocities4" value="{{velocities}}"></iron-localstorage>
     </template>
     <script>
         Polymer({
@@ -92,6 +92,8 @@ example Usage
                 },
             },
             _didRespond: function(){
+            },
+            scheduleNotes: function(){
             },
             _initInstrumentActivity: function(){
                 var arr= this.instrumentActivity.recording ;
@@ -194,7 +196,7 @@ example Usage
             },
             _programVelocityActivity: function(time,velocity){
                 this.events.push(this.async(function(){
-                    // console.log(velocity); 
+                    // console.log(velocity);
                     if(this.playing) {
                         this.fire("velocity-change", {
                             velocity: velocity,
