@@ -37,6 +37,14 @@ example Usage
             listeners: {
             },
             properties: {
+                lookAhead:{
+                    type:Number,
+                    value:1
+                },
+                nextNoteIndex:{
+                    type:Number,
+                    value:0
+                },
                 instrumentActivity:{
                     type:Object,
                     observer:'_initInstrumentActivity'
@@ -93,9 +101,6 @@ example Usage
             },
             _didRespond: function(){
             },
-            scheduleNotes: function(){
-
-            },
             _initInstrumentActivity: function(){
                 var arr= this.instrumentActivity.recording ;
                 var i ;
@@ -150,29 +155,43 @@ example Usage
                     } , 1000 )  ;
                 }
             },
+            scheduleNotes: function(){
+                if (this.playing){
+                    this.playBackTime = context.currentTime-this.playTime ;
+                    while (this.instrumentActivity.recording[this.nextNoteIndex]!== undefined  && (this.playBackTime < this.instrumentActivity.recording[this.nextNoteIndex].time && this.instrumentActivity.recording[this.nextNoteIndex].time < this.playBackTime+this.lookAhead) ){
+                        var ac = this.instrumentActivity.recording[this.nextNoteIndex] ;
+                        this.nextNoteIndex ++ ;
+                        if( ac.button === -1 ){
+                            continue ;
+                        }
+                        var when = context.currentTime+(ac.time-this.playBackTime) ;
+                        this.fire (ac.cmd, {midiNote:ac.button,time:when,channel:ac.channel}) ;
+                    }
+                }
+            },
             play: function(){
-                var sIIndex = this._getCurrentInstrumentIndex () ;
-                var sVIndex = this._getCurrentVelocityIndex () ;
+                // var sIIndex = this._getCurrentInstrumentIndex () ;
+                // var sVIndex = this._getCurrentVelocityIndex () ;
                 this.playing = true;
                 this.fire('velocity-change', {velocity:this.lastVelocity,fromPlayer:false}) ;
                 var tempo = 1/(this.tempo/100) ;
                 var it , i ;
                 this.playTime = context.currentTime ;
-                for (i = sIIndex; i < this.instrumentActivity.recording.length; i++) {
-                    it = this.instrumentActivity.recording[i] ;
-                    var time = it.time*tempo ;
-                    if ( time < this.playBackTime ) {
-                        time = this.playBackTime;
-                        // if(it.cmd === "note-off")
-                            // time+=0.01 ;
-                    }
-                    this._programInstrumentActivity( time,it.cmd,it.button,it.channel) ;
-
-                }
-                for (i = sVIndex;i < this.velocities.velocities.length;i++) {
-                    it = this.velocities.velocities[i] ;
-                    this._programVelocityActivity(it.time*tempo,it.value) ;
-                }
+                // for (i = sIIndex; i < this.instrumentActivity.recording.length; i++) {
+                //     it = this.instrumentActivity.recording[i] ;
+                //     var time = it.time*tempo ;
+                //     if ( time < this.playBackTime ) {
+                //         time = this.playBackTime;
+                //         // if(it.cmd === "note-off")
+                //             // time+=0.01 ;
+                //     }
+                //     this._programInstrumentActivity( time,it.cmd,it.button,it.channel) ;
+                //
+                // }
+                // for (i = sVIndex;i < this.velocities.velocities.length;i++) {
+                //     it = this.velocities.velocities[i] ;
+                //     this._programVelocityActivity(it.time*tempo,it.value) ;
+                // }
             },
             pause: function(){
                 if ( this.playTime === 0)
