@@ -103,7 +103,7 @@ example Usage
                             continue ;
                         }
                         var when = context.currentTime+(ac.time-this.playBackTime) ;
-                        this.fire (ac.cmd, {midiNote:ac.button,time:when,channel:ac.channel}) ;
+                        this.fire (ac.cmd, {midiNote:ac.button,time:when,channel:ac.channel,origin:'playback'}) ;
                     }
                 }
             },
