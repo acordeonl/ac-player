@@ -26,8 +26,8 @@ example Usage
             :host {
             }
         </style>
-        <iron-localstorage name="alicia_adorada5" value="{{instrumentActivity}}" ></iron-localstorage>
-        <iron-localstorage name="alicia_adorada_velocities5" value="{{velocities}}"></iron-localstorage>
+        <iron-localstorage name="alicia_adorada4" value="{{instrumentActivity}}" ></iron-localstorage>
+        <iron-localstorage name="alicia_adorada_velocities4" value="{{velocities}}"></iron-localstorage>
     </template>
     <script>
         Polymer({
@@ -57,13 +57,17 @@ example Usage
                 },
                 tempo:{
                     type:Number,
-                    value:100
+                    value:1
                 },
                 lastVelocity:{
                     type:Number,
                     value:127
                 },
                 playTime:{
+                    type:Number,
+                    value:0
+                },
+                playedTime:{
                     type:Number,
                     value:0
                 },
@@ -74,52 +78,42 @@ example Usage
                 playing:{
                     type:Boolean,
                     value:false
-                },
+                }
             },
             updateTempo: function(tempo){
-                if ( !this.updatingTempo) {
-                    this.updatingTempo =true ;
-                    this.pause() ;
-                    this.async(function(){
-                        var tempoAux = 100/this.tempo ;
-                        this.playBackTime/=tempoAux ;
-
-                        tempoAux = tempo/100 ;
-                        this.playBackTime/=tempoAux ;
-
-                        this.tempo= tempo ;
-                        this.play();
-                        this.updatingTempo = false ;
-                    } , 1000 )  ;
-                }
+                // console.log('llego');
+                this.tempo = 100/tempo ;
             },
             scheduleNotes: function(){
                 if (this.playing){
-                    this.playBackTime = context.currentTime-this.playTime ;
+                    this.playBackTime = this.playedTime + (context.currentTime-this.playTime)/(this.tempo) ;
+                    while (this.instrumentActivity.recording[this.nextNoteIndex]!== undefined  && (this.playBackTime > this.instrumentActivity.recording[this.nextNoteIndex].time) ){
+                            this.nextNoteIndex++ ;
+                    }
+
                     while (this.instrumentActivity.recording[this.nextNoteIndex]!== undefined  && (this.playBackTime < this.instrumentActivity.recording[this.nextNoteIndex].time && this.instrumentActivity.recording[this.nextNoteIndex].time < this.playBackTime+this.lookAhead) ){
                         var ac = this.instrumentActivity.recording[this.nextNoteIndex] ;
                         this.nextNoteIndex ++ ;
                         if( ac.button === -1 ){
                             continue ;
                         }
-                        var when = context.currentTime+(ac.time-this.playBackTime) ;
+                        var when = context.currentTime+(this.tempo)*(ac.time-this.playBackTime) ;
                         this.fire ('action', {cmd:ac.cmd,midiNote:ac.button,time:when,channel:ac.channel,origin:'playback'}) ;
                     }
                 }
             },
             play: function(){
                 this.playing = true;
-                this.fire('velocity-change', {velocity:this.lastVelocity,fromPlayer:false}) ;
-                var tempo = 1/(this.tempo/100) ;
-                var it , i ;
+                // this.fire('velocity-change', {velocity:this.lastVelocity,fromPlayer:false}) ;
+                this.nextNoteIndex = 0 ;
+                this.updateTempo(100) ;
                 this.playTime = context.currentTime ;
             },
             pause: function(){
-                if ( this.playTime === 0)
-                    this.playTime = context.currentTime ;
-                this.playBackTime += context.currentTime-this.playTime ;
+                this.playedTime += (context.currentTime-this.playTime)/this.tempo ;
+                console.log(this.playedTime);
                 this.playing =false ;
-                this.fire('velocity-change', {velocity:0,fromPlayer:false}) ;
+                // this.fire('velocity-change', {velocity:0,fromPlayer:false}) ;
             }
         });
     </script>
