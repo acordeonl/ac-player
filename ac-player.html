@@ -80,17 +80,22 @@ example Usage
                     value:false
                 }
             },
-            updateTempo: function(tempo){
-                // console.log('llego');
-                this.tempo = 100/tempo ;
+            setTempo: function(tempo){
+                this.wasPlaying = this.playing ;
+                this.pause() ;
+                this.async(function(){
+                    this.tempo = 100/tempo ;
+                } ,  500 )  ;
+                this.async(function(){
+                    if(this.wasPlaying)
+                        this.play() ;
+                } , 500 )  ;
             },
             scheduleNotes: function(){
                 if (this.playing){
                     this.playBackTime = this.playedTime + (context.currentTime-this.playTime)/(this.tempo) ;
-                    while (this.instrumentActivity.recording[this.nextNoteIndex]!== undefined  && (this.playBackTime > this.instrumentActivity.recording[this.nextNoteIndex].time) ){
+                    while (this.instrumentActivity.recording[this.nextNoteIndex]!== undefined  && (this.playBackTime > this.instrumentActivity.recording[this.nextNoteIndex].time) )
                             this.nextNoteIndex++ ;
-                    }
-
                     while (this.instrumentActivity.recording[this.nextNoteIndex]!== undefined  && (this.playBackTime < this.instrumentActivity.recording[this.nextNoteIndex].time && this.instrumentActivity.recording[this.nextNoteIndex].time < this.playBackTime+this.lookAhead) ){
                         var ac = this.instrumentActivity.recording[this.nextNoteIndex] ;
                         this.nextNoteIndex ++ ;
@@ -104,16 +109,14 @@ example Usage
             },
             play: function(){
                 this.playing = true;
-                // this.fire('velocity-change', {velocity:this.lastVelocity,fromPlayer:false}) ;
                 this.nextNoteIndex = 0 ;
-                this.updateTempo(100) ;
                 this.playTime = context.currentTime ;
             },
             pause: function(){
+                if(!this.playing)
+                    return ;
                 this.playedTime += (context.currentTime-this.playTime)/this.tempo ;
-                console.log(this.playedTime);
                 this.playing =false ;
-                // this.fire('velocity-change', {velocity:0,fromPlayer:false}) ;
             }
         });
     </script>
