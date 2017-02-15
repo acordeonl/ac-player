@@ -81,15 +81,7 @@ example Usage
                 }
             },
             setTempo: function(tempo){
-                this.wasPlaying = this.playing ;
-                this.pause() ;
-                this.async(function(){
-                    this.tempo = 100/tempo ;
-                } ,  500 )  ;
-                this.async(function(){
-                    if(this.wasPlaying)
-                        this.play() ;
-                } , 500 )  ;
+                this.tempo = 100/tempo ;
             },
             scheduleNotes: function(){
                 if (this.playing){
