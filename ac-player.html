@@ -39,14 +39,15 @@ example Usage
             properties: {
                 lookAhead:{
                     type:Number,
-                    value:10
+                    value:0.3
                 },
                 nextNoteIndex:{
                     type:Number,
                     value:0
                 },
                 instrumentActivity:{
-                    type:Object
+                    type:Object,
+                    observer:'_setRanges'
                 },
                 velocities:{
                     type:Object
@@ -57,7 +58,7 @@ example Usage
                 },
                 tempo:{
                     type:Number,
-                    value:1
+                    value:3
                 },
                 lastVelocity:{
                     type:Number,
@@ -83,9 +84,25 @@ example Usage
             setTempo: function(tempo){
                 this.tempo = 100/tempo ;
             },
+            _setRanges: function(){
+                var ac =this.instrumentActivity.recording ;
+                for (var i = 0; i < ac.length; i++) {
+                    if(ac[i].cmd!=='note-on')
+                        continue ;
+                    for (var j = i+1; j < ac.length; j++) {
+                        if(ac[j].cmd!=='note-off')
+                            continue ;
+                        if(ac[i].button ===ac[j].button) {
+                            this.instrumentActivity.recording[i].endTime = ac[j].time ;
+                            break ;
+                        }
+                    }
+                }
+            },
             scheduleNotes: function(){
                 if (this.playing){
                     this.playBackTime = this.playedTime + (context.currentTime-this.playTime)/(this.tempo) ;
+
                     while (this.instrumentActivity.recording[this.nextNoteIndex]!== undefined  && (this.playBackTime > this.instrumentActivity.recording[this.nextNoteIndex].time) )
                             this.nextNoteIndex++ ;
                     while (this.instrumentActivity.recording[this.nextNoteIndex]!== undefined  && (this.playBackTime < this.instrumentActivity.recording[this.nextNoteIndex].time && this.instrumentActivity.recording[this.nextNoteIndex].time < this.playBackTime+this.lookAhead) ){
@@ -100,9 +117,19 @@ example Usage
                 }
             },
             play: function(){
-                this.playing = true;
-                this.nextNoteIndex = 0 ;
-                this.playTime = context.currentTime ;
+                var ac = this.instrumentActivity.recording ;
+                this.playedTime -= 0.05 ;
+                for (var i = 0; i < ac.length; i++) {
+                    if(ac[i].endTime === undefined)
+                        continue ;
+                    if(ac[i].time < this.playedTime-0.05 && this.playedTime+0.05 < ac[i].endTime )
+                        this.fire ('action', {cmd:ac[i].cmd,midiNote:ac[i].button,time:context.currentTime,channel:ac[i].channel,origin:'playback'}) ;
+                }
+                // this.async(function(){
+                    this.playing = true;
+                    this.nextNoteIndex = 0 ;
+                    this.playTime = context.currentTime ;
+                // } , 100 )  ;
             },
             pause: function(){
                 if(!this.playing)
