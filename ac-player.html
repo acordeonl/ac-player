@@ -93,7 +93,12 @@ example Usage
                 this.playedTime = progress ;
             },
             _setRanges: function(){
-                var i , ac =this.instrumentActivity.recording ;
+                var i ;
+                for (i = 0; i < this.instrumentActivity.recording.length; i++) {
+                    if(this.instrumentActivity.recording[i].button===-1)
+                        this.instrumentActivity.recording.splice(i,1) ;
+                }
+                var ac =this.instrumentActivity.recording ;
                 for ( i = ac.length-1; i >= 0 ; i--)
                     if(ac[i].cmd==='note-off'){
                         this.recordingDuration=ac[i].time+2 ;
