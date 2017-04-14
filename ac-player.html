@@ -39,7 +39,7 @@ example Usage
             properties: {
                 lookAhead:{
                     type:Number,
-                    value:0.6
+                    value:3
                 },
                 nextNoteIndex:{
                     type:Number,
@@ -58,7 +58,7 @@ example Usage
                 },
                 tempo:{
                     type:Number,
-                    value:3
+                    value:1
                 },
                 lastVelocity:{
                     type:Number,
@@ -89,6 +89,7 @@ example Usage
                 this.tempo = 100/tempo ;
             },
             setProgress: function(progress){
+                // this.pause() ;
                 this.playedTime = progress ;
             },
             _setRanges: function(){
@@ -118,19 +119,19 @@ example Usage
                 }
             },
             scheduleNotes: function(){
+                requestAnimationFrame(this.scheduleNotes.bind(this)) ;
                 if (this.playing){
                     this.playBackTime = this.playedTime + (context.currentTime-this.playTime)/(this.tempo) ;
 
-                    while (this.instrumentActivity.recording[this.nextNoteIndex]!== undefined  && (this.playBackTime > this.instrumentActivity.recording[this.nextNoteIndex].time) )
-                            this.nextNoteIndex++ ;
-                    while (this.instrumentActivity.recording[this.nextNoteIndex]!== undefined  && (this.playBackTime <= this.instrumentActivity.recording[this.nextNoteIndex].time && this.instrumentActivity.recording[this.nextNoteIndex].time <  this.playBackTime+this.lookAhead) ){
+                    while (this.instrumentActivity.recording[this.nextNoteIndex]!== undefined  && (this.playBackTime <= this.instrumentActivity.recording[this.nextNoteIndex].time && this.instrumentActivity.recording[this.nextNoteIndex].time <  this.playBackTime+this.lookAhead)  ){
                         ac = this.instrumentActivity.recording[this.nextNoteIndex] ;
                         this.nextNoteIndex ++ ;
                         if( ac.button === -1 ){
                             continue ;
                         }
                         when = context.currentTime+(this.tempo)*(ac.time-this.playBackTime) ;
-                        this.fire ('action', {cmd:ac.cmd,midiNote:ac.button,time:when,channel:ac.channel,origin:'playback'}) ;
+                        this.fire ('action', {cmd:ac.cmd,midiNote:ac.button,timestamp:context.currentTime,time:when,channel:ac.channel,origin:'playback'}) ;
+                        return  ;
                     }
                 }
             },
@@ -143,6 +144,8 @@ example Usage
                 }
                 this.playing = true;
                 this.nextNoteIndex = 0 ;
+                while (this.instrumentActivity.recording[this.nextNoteIndex]!== undefined  && (this.playBackTime > this.instrumentActivity.recording[this.nextNoteIndex].time) )
+                        this.nextNoteIndex++ ;
                 this.playTime = context.currentTime ;
             },
             showCurrentGUIState: function(){
@@ -158,6 +161,9 @@ example Usage
                     return ;
                 this.playedTime += (context.currentTime-this.playTime)/this.tempo ;
                 this.playing =false ;
+            },
+            ready: function () {
+                this.scheduleNotes () ;
             }
         });
     </script>
