@@ -122,15 +122,16 @@ example Usage
                 requestAnimationFrame(this.scheduleNotes.bind(this)) ;
                 if (this.playing){
                     this.playBackTime = this.playedTime + (context.currentTime-this.playTime)/(this.tempo) ;
+                    var ac = this.instrumentActivity.recording ;
+                    for (; ac[this.nextNoteIndex]!== undefined  && this.playBackTime > ac[this.nextNoteIndex].time; this.nextNoteIndex++) ;
 
-                    while (this.instrumentActivity.recording[this.nextNoteIndex]!== undefined  && (this.playBackTime <= this.instrumentActivity.recording[this.nextNoteIndex].time && this.instrumentActivity.recording[this.nextNoteIndex].time <  this.playBackTime+this.lookAhead)  ){
-                        ac = this.instrumentActivity.recording[this.nextNoteIndex] ;
+                    while (ac[this.nextNoteIndex]!== undefined  && (this.playBackTime <= ac[this.nextNoteIndex].time && ac[this.nextNoteIndex].time <  this.playBackTime+this.lookAhead)  ){
+                        var action = this.instrumentActivity.recording[this.nextNoteIndex] ;
                         this.nextNoteIndex ++ ;
-                        if( ac.button === -1 ){
+                        if( action.button === -1 )
                             continue ;
-                        }
-                        when = context.currentTime+(this.tempo)*(ac.time-this.playBackTime) ;
-                        this.fire ('action', {cmd:ac.cmd,midiNote:ac.button,timestamp:context.currentTime,time:when,channel:ac.channel,origin:'playback'}) ;
+                        var when = (this.tempo)*(action.time-this.playBackTime) ;
+                        this.fire ('action', {cmd:action.cmd,midiNote:action.button,when:when,channel:action.channel,origin:'playback'}) ;
                         return  ;
                     }
                 }
@@ -138,15 +139,13 @@ example Usage
             play: function(){
                 var ac = this.instrumentActivity.recording ;
                 for (var i = 0; i < ac.length; i++) {
-                    if(ac[i].time < this.playedTime && this.playedTime < ac[i].endTime && ac[i].cmd === 'note-on' && (ac[i].endTime-this.playedTime)*this.tempo > 0.1) {
-                        this.fire ('action', {cmd:ac[i].cmd,midiNote:ac[i].button,time:context.currentTime,channel:ac[i].channel,origin:'playback'}) ;
+                    if(ac[i].time < this.playedTime && this.playedTime < ac[i].endTime && ac[i].cmd === 'note-on' && (ac[i].endTime-this.playedTime)*this.tempo > 0.2) {
+                        this.fire ('action', {cmd:ac[i].cmd,midiNote:ac[i].button,when:0,channel:ac[i].channel,origin:'playback'}) ;
                     }
                 }
-                this.playing = true;
                 this.nextNoteIndex = 0 ;
-                while (this.instrumentActivity.recording[this.nextNoteIndex]!== undefined  && (this.playBackTime > this.instrumentActivity.recording[this.nextNoteIndex].time) )
-                        this.nextNoteIndex++ ;
                 this.playTime = context.currentTime ;
+                this.playing = true;
             },
             showCurrentGUIState: function(){
                 var ac = this.instrumentActivity.recording ;
