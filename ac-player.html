@@ -139,7 +139,7 @@ example Usage
             play: function(){
                 var ac = this.instrumentActivity.recording ;
                 for (var i = 0; i < ac.length; i++) {
-                    if(ac[i].time < this.playedTime && this.playedTime < ac[i].endTime && ac[i].cmd === 'note-on' && (ac[i].endTime-this.playedTime)*this.tempo > 0.2) {
+                    if(ac[i].time < this.playedTime && this.playedTime < ac[i].endTime && ac[i].cmd === 'note-on' && (ac[i].endTime-this.playedTime)*this.tempo > 0.15) {
                         this.fire ('action', {cmd:ac[i].cmd,midiNote:ac[i].button,when:0,channel:ac[i].channel,origin:'playback'}) ;
                     }
                 }
