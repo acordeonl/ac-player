@@ -1,4 +1,4 @@
-<link rel="import" href="../polymer/polymer.html">
+    <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../ajax-manager/ajax-manager.html">
 <link rel="import" href="../iron-localstorage/iron-localstorage.html">
 
@@ -39,7 +39,7 @@ example Usage
             properties: {
                 lookAhead:{
                     type:Number,
-                    value:3
+                    value:4
                 },
                 nextNoteIndex:{
                     type:Number,
@@ -69,10 +69,6 @@ example Usage
                     value:0
                 },
                 playedTime:{
-                    type:Number,
-                    value:0
-                },
-                playBackTime:{
                     type:Number,
                     value:0
                 },
@@ -121,37 +117,56 @@ example Usage
             scheduleNotes: function(){
                 requestAnimationFrame(this.scheduleNotes.bind(this)) ;
                 if (this.playing){
-                    this.playBackTime = this.playedTime + (context.currentTime-this.playTime)/(this.tempo) ;
-                    var ac = this.instrumentActivity.recording ;
-                    for (; ac[this.nextNoteIndex]!== undefined  && this.playBackTime > ac[this.nextNoteIndex].time; this.nextNoteIndex++) ;
-
-                    while (ac[this.nextNoteIndex]!== undefined  && (this.playBackTime <= ac[this.nextNoteIndex].time && ac[this.nextNoteIndex].time <  this.playBackTime+this.lookAhead)  ){
-                        var action = this.instrumentActivity.recording[this.nextNoteIndex] ;
-                        this.nextNoteIndex ++ ;
-                        if( action.button === -1 )
-                            continue ;
-                        var when = (this.tempo)*(action.time-this.playBackTime) ;
-                        this.fire ('action', {cmd:action.cmd,midiNote:action.button,when:when,channel:action.channel,origin:'playback'}) ;
-                        return  ;
+                    var action = this.instrumentActivity.recording[this.nextNoteIndex] ;
+                    if(action === undefined)
+                        return ;
+                    if(action.time > this.playedTime + (context.currentTime-this.playTime)/(this.tempo)+this.lookAhead || synthBuffer+1 > synthBufferLen)
+                        return ;
+                    if( action.button !== -1 ) {
+                        this.fire ('action', {
+                            cmd:action.cmd,
+                            button:action.button,
+                            channel:action.channel,
+                            time:action.time,
+                            tempo:this.tempo,
+                            playedTime:this.playedTime,
+                            playTime:this.playTime,
+                            origin:'playback'
+                        }) ;
                     }
+                    this.nextNoteIndex ++ ;
+                    action = null ;
                 }
             },
             play: function(){
                 var ac = this.instrumentActivity.recording ;
                 for (var i = 0; i < ac.length; i++) {
-                    if(ac[i].time < this.playedTime && this.playedTime < ac[i].endTime && ac[i].cmd === 'note-on' && (ac[i].endTime-this.playedTime)*this.tempo > 0.15) {
-                        this.fire ('action', {cmd:ac[i].cmd,midiNote:ac[i].button,when:0,channel:ac[i].channel,origin:'playback'}) ;
+                    if(ac[i].time < this.playedTime && this.playedTime < ac[i].endTime && ac[i].cmd === 'note-on' ) {
+                        this.fire ('action', {
+                            cmd:ac[i].cmd,
+                            button:ac[i].button,
+                            channel:ac[i].channel,
+                            playNow:1,
+                            origin:'playback'
+                        }) ;
                     }
                 }
                 this.nextNoteIndex = 0 ;
+                for (; ac[this.nextNoteIndex]!== undefined  && this.playedTime > ac[this.nextNoteIndex].time; this.nextNoteIndex++) ;
                 this.playTime = context.currentTime ;
                 this.playing = true;
             },
             showCurrentGUIState: function(){
                 var ac = this.instrumentActivity.recording ;
                 for (var i = 0; i < ac.length; i++) {
-                    if(ac[i].time < this.playedTime && this.playedTime < ac[i].endTime && ac[i].cmd === 'note-on' && (ac[i].endTime-this.playedTime)*this.tempo > 0.1) {
-                        this.fire ('action', {cmd:ac[i].cmd,midiNote:ac[i].button,time:context.currentTime,channel:ac[i].channel,origin:'playbackGUI'}) ;
+                    if(ac[i].time < this.playedTime && this.playedTime < ac[i].endTime && ac[i].cmd === 'note-on') {
+                        this.fire ('action', {
+                            cmd:ac[i].cmd,
+                            button:ac[i].button,
+                            channel:ac[i].channel,
+                            playNow:1,
+                            origin:'playbackGUI'
+                        }) ;
                     }
                 }
             },
