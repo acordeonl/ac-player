@@ -105,9 +105,9 @@ example Usage
                     if(ac[i].cmd!=='note-on')
                         continue ;
                     for (var j = i+1; j < ac.length; j++) {
-                        if(ac[j].cmd!=='note-off')
+                        if(ac[j].cmd!=='note-off' || ac[i].channel !== ac[j].channel)
                             continue ;
-                        if(ac[i].button ===ac[j].button) {
+                        if(ac[i].button ===ac[j].button ) {
                             this.instrumentActivity.recording[i].endTime = ac[j].time ;
                             break ;
                         }
@@ -125,7 +125,8 @@ example Usage
                     }
                     if(action.time > this.playedTime + (context.currentTime-this.playTime)/(this.tempo)+this.lookAhead || synthBuffer+1 > synthBufferLen)
                         return ;
-                    if( action.button !== -1  && action.button!== previousButton && action.cmd ==='note-on') {
+                    if( action.button !== -1  && action.cmd ==='note-on') {
+                        console.log(this.nextNoteIndex);
                         this.fire ('action', {
                             cmd:action.cmd,
                             button:action.button,
@@ -138,13 +139,13 @@ example Usage
                             origin:'playback'
                         }) ;
                     }
-                    previousButton = action.button  ;
                     this.nextNoteIndex ++ ;
                     action = null ;
                 }
             },
             play: function(){
                 var ac = this.instrumentActivity.recording ;
+                console.log(ac);
                 this.playTime = context.currentTime ;
                 this.nextNoteIndex = 0 ;
                 // for (var i = 0; i < ac.length; i++) {
