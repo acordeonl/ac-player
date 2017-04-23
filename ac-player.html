@@ -1,4 +1,4 @@
-    <link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../ajax-manager/ajax-manager.html">
 <link rel="import" href="../iron-localstorage/iron-localstorage.html">
 
@@ -115,45 +115,78 @@ example Usage
                 }
             },
             scheduleNotes: function(){
-                requestAnimationFrame(this.scheduleNotes.bind(this)) ;
+                // requestAnimationFrame(this.scheduleNotes.bind(this)) ;
+                // return ;
                 if (this.playing){
                     var action = this.instrumentActivity.recording[this.nextNoteIndex] ;
-                    if(action === undefined)
+                    if(action === undefined || action.cmd === 'note-off') {
+                        this.nextNoteIndex ++ ;
                         return ;
+                    }
                     if(action.time > this.playedTime + (context.currentTime-this.playTime)/(this.tempo)+this.lookAhead || synthBuffer+1 > synthBufferLen)
                         return ;
-                    if( action.button !== -1 ) {
+                    if( action.button !== -1  && action.button!== previousButton && action.cmd ==='note-on') {
                         this.fire ('action', {
                             cmd:action.cmd,
                             button:action.button,
                             channel:action.channel,
                             time:action.time,
+                            endTime:action.endTime,
                             tempo:this.tempo,
                             playedTime:this.playedTime,
                             playTime:this.playTime,
                             origin:'playback'
                         }) ;
                     }
+                    previousButton = action.button  ;
                     this.nextNoteIndex ++ ;
                     action = null ;
                 }
             },
             play: function(){
                 var ac = this.instrumentActivity.recording ;
-                for (var i = 0; i < ac.length; i++) {
-                    if(ac[i].time < this.playedTime && this.playedTime < ac[i].endTime && ac[i].cmd === 'note-on' ) {
-                        this.fire ('action', {
-                            cmd:ac[i].cmd,
-                            button:ac[i].button,
-                            channel:ac[i].channel,
-                            playNow:1,
-                            origin:'playback'
-                        }) ;
-                    }
-                }
-                this.nextNoteIndex = 0 ;
-                for (; ac[this.nextNoteIndex]!== undefined  && this.playedTime > ac[this.nextNoteIndex].time; this.nextNoteIndex++) ;
                 this.playTime = context.currentTime ;
+                this.nextNoteIndex = 0 ;
+                // for (var i = 0; i < ac.length; i++) {
+                //     if(ac[i].time < this.playedTime && this.playedTime < ac[i].endTime && ac[i].cmd === 'note-on' ) {
+                //         this.fire ('action', {
+                //             cmd:ac[i].cmd,
+                //             button:ac[i].button,
+                //             channel:ac[i].channel,
+                //             playNow:1,
+                //             endTime:ac[i].endTime,
+                //             tempo:this.tempo,
+                //             playedTime:this.playedTime,
+                //             playTime:this.playTime,
+                //             origin:'playback'
+                //         }) ;
+                //         this.nextNoteIndex = i+1  ;
+                //     }
+                // }
+                for (; ac[this.nextNoteIndex]!== undefined  && this.playedTime > ac[this.nextNoteIndex].time; this.nextNoteIndex++) ;
+                // var action ;
+                // while(synthBuffer < synthBufferLen) {
+                //     action = ac[this.nextNoteIndex] ;
+                //     if(action === undefined)
+                //         continue ;
+                //     if(action.time > this.playedTime + (context.currentTime-this.playTime)/(this.tempo)+this.lookAhead)
+                //         break ;
+                //     if( action.button !== -1 && action.cmd ==='note-on') {
+                //         this.fire ('action', {
+                //             cmd:action.cmd,
+                //             button:action.button,
+                //             channel:action.channel,
+                //             time:action.time,
+                //             endTime:action.endTime,
+                //             tempo:this.tempo,
+                //             playedTime:this.playedTime,
+                //             playTime:this.playTime,
+                //             origin:'playback'
+                //         }) ;
+                //     }
+                //     this.nextNoteIndex ++ ;
+                //     action = null ;
+                // }
                 this.playing = true;
             },
             showCurrentGUIState: function(){
@@ -177,7 +210,8 @@ example Usage
                 this.playing =false ;
             },
             ready: function () {
-                this.scheduleNotes () ;
+                setInterval(this.scheduleNotes.bind(this),16) ;
+                // this.scheduleNotes () ;
             }
         });
     </script>
