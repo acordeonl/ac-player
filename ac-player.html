@@ -39,7 +39,7 @@ example Usage
             properties: {
                 lookAhead:{
                     type:Number,
-                    value:4
+                    value:0.1
                 },
                 nextNoteIndex:{
                     type:Number,
@@ -118,34 +118,30 @@ example Usage
                 // requestAnimationFrame(this.scheduleNotes.bind(this)) ;
                 // return ;
                 if (this.playing){
-                    var action = this.instrumentActivity.recording[this.nextNoteIndex] ;
-                    if(action === undefined || action.cmd === 'note-off') {
-                        this.nextNoteIndex ++ ;
+                    if (this.nextNoteIndex>=this.instrumentActivity.recording.length)
                         return ;
-                    }
-                    if(action.time > this.playedTime + (context.currentTime-this.playTime)/(this.tempo)+this.lookAhead || synthBuffer+1 > synthBufferLen)
+                    if(this.instrumentActivity.recording[this.nextNoteIndex].time > this.playedTime + (context.currentTime-this.playTime)/(this.tempo)+this.lookAhead)
                         return ;
-                    if( action.button !== -1  && action.cmd ==='note-on') {
-                        console.log(this.nextNoteIndex);
+                    this.nextNoteIndex ++ ;
+                    if(this.instrumentActivity.recording[this.nextNoteIndex] === undefined || this.instrumentActivity.recording[this.nextNoteIndex].cmd === 'note-off')
+                        return ;
+                    if( this.instrumentActivity.recording[this.nextNoteIndex].button !== -1) {
                         this.fire ('action', {
-                            cmd:action.cmd,
-                            button:action.button,
-                            channel:action.channel,
-                            time:action.time,
-                            endTime:action.endTime,
+                            cmd:this.instrumentActivity.recording[this.nextNoteIndex].cmd,
+                            button:this.instrumentActivity.recording[this.nextNoteIndex].button,
+                            channel:this.instrumentActivity.recording[this.nextNoteIndex].channel,
+                            time:this.instrumentActivity.recording[this.nextNoteIndex].time,
+                            endTime:this.instrumentActivity.recording[this.nextNoteIndex].endTime,
                             tempo:this.tempo,
                             playedTime:this.playedTime,
                             playTime:this.playTime,
                             origin:'playback'
                         }) ;
                     }
-                    this.nextNoteIndex ++ ;
-                    action = null ;
                 }
             },
             play: function(){
                 var ac = this.instrumentActivity.recording ;
-                console.log(ac);
                 this.playTime = context.currentTime ;
                 this.nextNoteIndex = 0 ;
                 // for (var i = 0; i < ac.length; i++) {
