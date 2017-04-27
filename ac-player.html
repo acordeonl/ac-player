@@ -1,7 +1,6 @@
-    <link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../ajax-manager/ajax-manager.html">
 <link rel="import" href="../iron-localstorage/iron-localstorage.html">
-
 
 <!--
 
@@ -26,7 +25,7 @@ example Usage
             :host {
             }
         </style>
-        <iron-localstorage name="alicia_adorada4" value="{{instrumentActivity}}" ></iron-localstorage>
+        <iron-localstorage name="alicia_adorada4" value="{{insAc}}" ></iron-localstorage>
         <iron-localstorage name="alicia_adorada_velocities4" value="{{velocities}}"></iron-localstorage>
     </template>
     <script>
@@ -45,7 +44,7 @@ example Usage
                     type:Number,
                     value:0
                 },
-                instrumentActivity:{
+                insAc:{
                     type:Object,
                     observer:'_setRanges'
                 },
@@ -89,11 +88,11 @@ example Usage
             },
             _setRanges: function(){
                 var i ;
-                for (i = 0; i < this.instrumentActivity.recording.length; i++) {
-                    if(this.instrumentActivity.recording[i].button===-1)
-                        this.instrumentActivity.recording.splice(i,1) ;
+                for (i = 0; i < this.insAc.recording.length; i++) {
+                    if(this.insAc.recording[i].button===-1)
+                        this.insAc.recording.splice(i,1) ;
                 }
-                var ac =this.instrumentActivity.recording ;
+                var ac =this.insAc.recording ;
                 for ( i = ac.length-1; i >= 0 ; i--)
                     if(ac[i].cmd==='note-off'){
                         this.recordingDuration=ac[i].time+2 ;
@@ -107,7 +106,7 @@ example Usage
                         if(ac[j].cmd!=='note-off' || ac[j].channel !== ac[i].channel)
                             continue ;
                         if(ac[i].button ===ac[j].button) {
-                            this.instrumentActivity.recording[i].endTime = ac[j].time ;
+                            this.insAc.recording[i].endTime = ac[j].time ;
                             break ;
                         }
                     }
@@ -115,17 +114,16 @@ example Usage
             },
             scheduleNotes: function(){
                 if (this.playing){
-                    var action = this.instrumentActivity.recording[this.nextNoteIndex] ;
-                    if(action === undefined)
+                    if(this.insAc.recording[this.nextNoteIndex] === undefined)
                         return ;
-                    if(action.time > this.playedTime + (context.currentTime-this.playTime)/(this.tempo)+this.lookAhead)
+                    if(this.insAc.recording[this.nextNoteIndex].time > this.playedTime + (context.currentTime-this.playTime)/(this.tempo)+this.lookAhead)
                         return ;
-                    if( action.button !== -1 ) {
+                    if( this.insAc.recording[this.nextNoteIndex].button !== -1 ) {
                         this.fire ('action', {
-                            cmd:action.cmd,
-                            button:action.button,
-                            channel:action.channel,
-                            time:action.time,
+                            cmd:this.insAc.recording[this.nextNoteIndex].cmd,
+                            button:this.insAc.recording[this.nextNoteIndex].button,
+                            channel:this.insAc.recording[this.nextNoteIndex].channel,
+                            time:this.insAc.recording[this.nextNoteIndex].time,
                             tempo:this.tempo,
                             playedTime:this.playedTime,
                             playTime:this.playTime,
@@ -133,35 +131,32 @@ example Usage
                         }) ;
                     }
                     this.nextNoteIndex ++ ;
-                    action = null ;
                 }
             },
             play: function(){
-                var ac = this.instrumentActivity.recording ;
-                for (var i = 0; i < ac.length; i++) {
-                    if(ac[i].time < this.playedTime && this.playedTime < ac[i].endTime && ac[i].cmd === 'note-on' ) {
+                for (var i = 0; i < this.insAc.recording.length; i++) {
+                    if(this.insAc.recording[i].time < this.playedTime && this.playedTime < this.insAc.recording[i].endTime && this.insAc.recording[i].cmd === 'note-on' ) {
                         this.fire ('action', {
-                            cmd:ac[i].cmd,
-                            button:ac[i].button,
-                            channel:ac[i].channel,
+                            cmd:this.insAc.recording[i].cmd,
+                            button:this.insAc.recording[i].button,
+                            channel:this.insAc.recording[i].channel,
                             playNow:1,
                             origin:'playback'
                         }) ;
                     }
                 }
                 this.nextNoteIndex = 0 ;
-                for (; ac[this.nextNoteIndex]!== undefined  && this.playedTime > ac[this.nextNoteIndex].time; this.nextNoteIndex++) ;
+                for (; this.insAc.recording[this.nextNoteIndex]!== undefined  && this.playedTime > this.insAc.recording[this.nextNoteIndex].time; this.nextNoteIndex++) ;
                 this.playTime = context.currentTime ;
                 this.playing = true;
             },
             showCurrentGUIState: function(){
-                var ac = this.instrumentActivity.recording ;
-                for (var i = 0; i < ac.length; i++) {
-                    if(ac[i].time < this.playedTime && this.playedTime < ac[i].endTime && ac[i].cmd === 'note-on') {
+                for (var i = 0; i < this.insAc.recording.length; i++) {
+                    if(this.insAc.recording[i].time < this.playedTime && this.playedTime < this.insAc.recording[i].endTime && this.insAc.recording[i].cmd === 'note-on') {
                         this.fire ('action', {
-                            cmd:ac[i].cmd,
-                            button:ac[i].button,
-                            channel:ac[i].channel,
+                            cmd:this.insAc.recording[i].cmd,
+                            button:this.insAc.recording[i].button,
+                            channel:this.insAc.recording[i].channel,
                             playNow:1,
                             origin:'playbackGUI'
                         }) ;
@@ -175,7 +170,7 @@ example Usage
                 this.playing =false ;
             },
             ready: function () {
-                setInterval(this.scheduleNotes.bind(this),16) ;
+                setInterval(this.scheduleNotes.bind(this),1) ;
             }
         });
     </script>
