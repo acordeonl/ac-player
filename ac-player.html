@@ -38,7 +38,7 @@ example Usage
             properties: {
                 lookAhead:{
                     type:Number,
-                    value:0.1
+                    value:0.3
                 },
                 nextNoteIndex:{
                     type:Number,
@@ -113,13 +113,14 @@ example Usage
                 }
             },
             scheduleNotes: function(){
-                if (this.playing){
+                if (playing){
+                    // this.parentNode.test() ;
                     if(this.insAc.recording[this.nextNoteIndex] === undefined)
                         return ;
                     if(this.insAc.recording[this.nextNoteIndex].time > this.playedTime + (context.currentTime-this.playTime)/(this.tempo)+this.lookAhead)
                         return ;
                     if( this.insAc.recording[this.nextNoteIndex].button !== -1 ) {
-                        this.fire ('action', {
+                        this.parentNode.action( {
                             cmd:this.insAc.recording[this.nextNoteIndex].cmd,
                             button:this.insAc.recording[this.nextNoteIndex].button,
                             channel:this.insAc.recording[this.nextNoteIndex].channel,
@@ -136,7 +137,7 @@ example Usage
             play: function(){
                 for (var i = 0; i < this.insAc.recording.length; i++) {
                     if(this.insAc.recording[i].time < this.playedTime && this.playedTime < this.insAc.recording[i].endTime && this.insAc.recording[i].cmd === 'note-on' ) {
-                        this.fire ('action', {
+                        this.parentNode.action( {
                             cmd:this.insAc.recording[i].cmd,
                             button:this.insAc.recording[i].button,
                             channel:this.insAc.recording[i].channel,
@@ -148,12 +149,11 @@ example Usage
                 this.nextNoteIndex = 0 ;
                 for (; this.insAc.recording[this.nextNoteIndex]!== undefined  && this.playedTime > this.insAc.recording[this.nextNoteIndex].time; this.nextNoteIndex++) ;
                 this.playTime = context.currentTime ;
-                this.playing = true;
             },
             showCurrentGUIState: function(){
                 for (var i = 0; i < this.insAc.recording.length; i++) {
                     if(this.insAc.recording[i].time < this.playedTime && this.playedTime < this.insAc.recording[i].endTime && this.insAc.recording[i].cmd === 'note-on') {
-                        this.fire ('action', {
+                        this.parentNode.action( {
                             cmd:this.insAc.recording[i].cmd,
                             button:this.insAc.recording[i].button,
                             channel:this.insAc.recording[i].channel,
@@ -164,10 +164,9 @@ example Usage
                 }
             },
             pause: function(){
-                if(!this.playing)
+                if(playing)
                     return ;
                 this.playedTime += (context.currentTime-this.playTime)/this.tempo ;
-                this.playing =false ;
             },
             ready: function () {
                 setInterval(this.scheduleNotes.bind(this),1) ;
