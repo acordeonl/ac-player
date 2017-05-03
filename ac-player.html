@@ -135,6 +135,8 @@ example Usage
                 }
             },
             play: function(){
+                if(playing)
+                    return ;
                 for (var i = 0; i < this.insAc.recording.length; i++) {
                     if(this.insAc.recording[i].time < this.playedTime && this.playedTime < this.insAc.recording[i].endTime && this.insAc.recording[i].cmd === 'note-on' ) {
                         this.parentNode.action( {
@@ -165,8 +167,7 @@ example Usage
             },
             pause: function(){
                 if(playing)
-                    return ;
-                this.playedTime += (context.currentTime-this.playTime)/this.tempo ;
+                    this.playedTime += (context.currentTime-this.playTime)/this.tempo ;
             },
             ready: function () {
                 setInterval(this.scheduleNotes.bind(this),1) ;
